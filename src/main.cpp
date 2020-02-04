@@ -64,7 +64,12 @@ int main(){
 		imshow(windowNameCapture, curImg);
 
     // Analyse de l'image et détection des yeux
-    detectAndDraw(curImg, 1);
+	Point relative_pos;
+
+	if (detectEyes(curImg, &relative_pos, 1, true, true)) {
+		// Affichage de la position des yeux par rapport au centre de l'image
+		std::cout << relative_pos << std::endl;
+	}   
     imshow(windowNameVisage, curImg);
 
 		//! on r�cup�re la position de la t�te relative a la camera (ici elle est fix�e)
