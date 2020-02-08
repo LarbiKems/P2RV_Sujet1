@@ -30,5 +30,18 @@ using namespace cv;
   \param[in] scale Scale of the image
   \param[in] draw_eyes True if we want to draw a circle arround the eyes
   \param[in] draw_arrow True if we want to draw an arrow from the center of the image to the center of the eyes
+  \param[in] calibrate True if we want to calibrate the depth
 */
-bool detectEyes( Mat& img, Point * relative_head_position, double scale=1.0, bool draw_eyes=false, bool draw_arrow=false);
+bool detectEyes( Mat& img, Point3d * relative_head_position, double scale=1.0, bool draw_eyes=false, bool draw_arrow=false, bool calibrate=false);
+
+/*!
+  \brief Sets the dist_btw_eyes value of the headDetector
+  \param[in] dist Distance between the two eyes, in cm
+*/
+void setEyeDistance(float dist);
+
+/*!
+  \brief Try to calibrate the depth with the image. Returns true if success
+  \param[in] img Image we use for depth calibration
+*/
+bool calibrateDepth(Mat & img);

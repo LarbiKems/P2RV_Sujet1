@@ -1,24 +1,45 @@
 #include "faceDetection.hpp"
-
 #include <cmath>
 using namespace std;
-using namespace cv;
 
-// PreDefined trained XML classifiers with facial features
-bool xml_files_loaded = false;
-CascadeClassifier cascade;
+// Structure qui regroupe toutes les variables nécessaire à la détection de la tête
+struct {
+  // True if the xml file was already loaded
+  bool xml_files_loaded = false;
 
-bool detectEyes( Mat& img, Point * relative_head_position,  double scale, bool draw_eyes, bool draw_arrow)
+  // Classifier used to detect the eyes on the picture
+  CascadeClassifier cascade;
+
+  // Distance between the two eyes, in cm
+  float dist_btw_eyes_cm = 6.0;
+
+  // Coefficient to compute the depth of the head detected
+  float depth_coeff = 50 / (6.0/80);
+
+  // Distance chosen to calibrate in cm
+  float calibrationDistance = 50.0;
+
+  // True if the headDetector was calibrated
+  bool calibrated = false;
+} headDetector;
+
+void setEyeDistance(float dist) {
+  headDetector.dist_btw_eyes_cm = dist;
+}
+
+bool calibrateDepth(Mat & img) {
+  Point3d temp;
+  return detectEyes(img, &temp, 1, true, false, true);
+}
+
+bool detectEyes( Mat& img, Point3d * relative_head_position,  double scale, bool draw_eyes, bool draw_arrow, bool calibrate)
 {
 
   // Load xml files if not loaded
-  if(!xml_files_loaded) {
-    // Change path before execution
-    //cascade.load( "/usr/local/share/OpenCV/haarcascades/haarcascade_frontalcatface.xml" ) ;
-    cascade.load( "resources/haarcascade_eye.xml" ) ;
-    xml_files_loaded = true;
+  if(!headDetector.xml_files_loaded) {
+    headDetector.xml_files_loaded = headDetector.cascade.load( "resources/haarcascade_eye.xml" ) ;
   }
-  if (!xml_files_loaded) {
+  if (!headDetector.xml_files_loaded) {
     cout << "haarcascade_eye.xml not found" << endl;
     return false;
   }
@@ -34,7 +55,7 @@ bool detectEyes( Mat& img, Point * relative_head_position,  double scale, bool d
   equalizeHist( smallImg, smallImg );
 
   // Detect faces of different sizes using cascade classifier
-  cascade.detectMultiScale( smallImg, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60) );
+  headDetector.cascade.detectMultiScale( smallImg, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60) );
   
   // Colors used for Drawing tool
   Scalar blue = Scalar(255, 0, 0); 
@@ -64,8 +85,13 @@ bool detectEyes( Mat& img, Point * relative_head_position,  double scale, bool d
     // Point au centre de l'image
     Point img_center(smallImg.cols/2, smallImg.rows/2);
 
-    (*relative_head_position) = center - img_center;
+    // Position relative en pixels, en 2D (dans le plan xy)
+    Point relative_pos = center - img_center;
 
+    // Distance entre les deux yeux en pixels
+    float dist_btw_eyes_px = norm(p1 - p2);
+
+    // Mise en valeur des informations collectées sur l'image si besoin
     if (draw_arrow) {
       arrowedLine(img, img_center, center, red, 4);
     }
@@ -73,8 +99,27 @@ bool detectEyes( Mat& img, Point * relative_head_position,  double scale, bool d
       circle( img, p1, radius1, blue, 3, 8, 0 );
       circle( img, p2, radius2, blue, 3, 8, 0 );
     }
-    return true;
+
+    // Si la calibration de la profondeur est demandée
+    if (calibrate) {
+      headDetector.depth_coeff = headDetector.calibrationDistance / (headDetector.dist_btw_eyes_cm / dist_btw_eyes_px);
+      headDetector.calibrated = true;
+    }
+
+    if (headDetector.calibrated)
+    {
+      /* Si le headDetector est calibré, on peut calculer la position de la tête */
+
+      // Calcul du coefficient pour passer de pixels en cm dans le plan xy
+      float coeff = headDetector.dist_btw_eyes_cm/dist_btw_eyes_px;
       
+      relative_head_position->x = coeff*relative_pos.x;
+      relative_head_position->y = coeff*relative_pos.y;
+      relative_head_position->z = coeff*headDetector.depth_coeff;
+      
+      // La position de la tête a été trouvée, on renvoie true
+      return true;
+    }
 
   }
 

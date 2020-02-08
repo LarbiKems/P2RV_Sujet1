@@ -22,6 +22,7 @@ using namespace cv;
 #define pixelParMetre 0.000264 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
 // Defining escape key
 #define KEY_ESCAPE 27
+#define ENTER_KEY 13
 
 VideoCapture   cap; //la vid�o
 Mat curImg ; //! l'image courante
@@ -31,7 +32,7 @@ Mat imgFen2; //! l'image d�coup�e avec mouvement de la tete
 float distanceCameraPaysage = 0.5f; //! distance paysage cam�ra (en m)
 int decalagePixelHorizontal = 0; //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 int decalagePixelVertical = 0; //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-
+bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
 
 int main(){
 
@@ -53,30 +54,82 @@ int main(){
 	string windowNameCapture = "Image obtenue par la caméra";
 	namedWindow(windowNameCapture, CV_WINDOW_AUTOSIZE);
 
-  string windowNameVisage = "Image après détection de visage";
-  namedWindow(windowNameVisage, CV_WINDOW_AUTOSIZE);
+	string windowNameVisage = "Image après détection de visage";
+	namedWindow(windowNameVisage, CV_WINDOW_AUTOSIZE);
 
+	/*! Première étape: calibration de la caméra "face" */
+	float dist_btw_eyes;
+	cout << "Distance entre les deux yeux (cm): " << endl;
+	cin >> dist_btw_eyes;
+	setEyeDistance(dist_btw_eyes);
+	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
 
-	//! on l'affiche en boucle !
+	bool calibrating = false;
+
+	//! Boucle de calibration
+	while( (key != KEY_ESCAPE) && (key != ENTER_KEY) ) {
+		cap>>curImg;
+		Point3d temp;
+		// Affiche de l'image courante et dessin des yeux si ils sont détectés
+
+		if ( (key == 'c') || calibrating ){
+			if (key != 'e') {
+				headDetectorCalibrated = calibrateDepth(curImg);
+
+				if (headDetectorCalibrated) {
+					cout << "Calibration effectuée. \n\t- Appuyer sur Entrée pour confirmer.\n\t- Appuyer sur c pour refaire la calibration" << endl;
+					calibrating = false;
+				}
+				else {
+					if (key == 'c') {
+						cout << "Calibration (appuyer sur e pour annuler)..." << endl;
+						calibrating = true;
+					}
+				}
+			}
+			else {
+				cout << "Calibration annulée. Repositionnez-vous et appuyez sur c" << endl;
+				detectEyes(curImg, &temp, 1.0, true);
+				calibrating = false;
+			}
+		}
+		else {
+			detectEyes(curImg, &temp, 1.0, true);
+		}
+
+		
+		imshow(windowNameCapture, curImg);
+
+		key = waitKey(1);
+	}
+	if (!headDetectorCalibrated)
+	{	
+		cout << "Calibration non effectuée. Les paramètres par défaut seront utilisés." << endl;
+	}
+	else {
+		cout << "Calibration validée" << endl;
+	}
+
+	key = 'a';
+
+	//! Boucle principale
 	while(key!= KEY_ESCAPE){
 
 		cap>>curImg;
 		imshow(windowNameCapture, curImg);
 
-    // Analyse de l'image et détection des yeux
-	Point relative_pos;
+		// Analyse de l'image et détection des yeux
+		Point3d relative_pos;
 
-	if (detectEyes(curImg, &relative_pos, 1, true, true)) {
-		// Affichage de la position des yeux par rapport au centre de l'image
-		std::cout << relative_pos << std::endl;
-	}   
-    imshow(windowNameVisage, curImg);
+		if (detectEyes(curImg, &relative_pos, 1, true, true)) {
+			// Affichage de la position des yeux par rapport au centre de l'image
+			std::cout << relative_pos << std::endl;
+		}   
+		imshow(windowNameVisage, curImg);
 
-		//! on r�cup�re la position de la t�te relative a la camera (ici elle est fix�e)
+			//! on r�cup�re la position de la t�te relative a la camera (ici elle est fix�e)
 
-		//float positionTete[3]=...
-
-
+			//float positionTete[3]=...
 
 		key = waitKey(1);
 	}

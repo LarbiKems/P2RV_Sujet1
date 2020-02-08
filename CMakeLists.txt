@@ -4,9 +4,10 @@ PROJECT (P2RV_Sujet1)
 
 set (EXECUTABLE_OUTPUT_PATH bin)
 
-set (
+file (
+  GLOB_RECURSE
   SOURCE_FILES
-  src/main.cpp src/faceDetection.cpp src/faceDetection.hpp
+  src/*
 )
 
 # OpenCV
