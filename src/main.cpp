@@ -1,13 +1,11 @@
 // inclusion des bibliothèques, dont OpenCV
 
 #include <string.h>
-#include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
+
+
 #include <vector>
-#include "windows.h" //j'etais obligé désopasdéso (il n'y a pas de multiplateforme pour l'appui touche)
+#include "deplacementImage.h"
+
 // namespace
 using namespace std;
 using namespace cv;
@@ -73,7 +71,7 @@ int main(){
 	imshow(windowNameCapture3, curImg);
 
 
-	//! on chosit la fenetre qu'on veut
+	//! on chosit la fenetre qu'on veut (ici un peu au hasard)
 	Range decoupageColonne(heightFrame/2-150, heightFrame/2+150);
 	Range decoupageLigne(widthFrame/2-100,widthFrame/2+100);
 	
@@ -86,18 +84,6 @@ int main(){
 	positionTete[2]= 0;
 
 
-	//! on change l'image obtenue
-	//! d'après de longs calculs (thalès), l'image obtenue dépend de la distance de la caméra au "paysage"...
-	//! On va donc récupérer la taille du marqueur à chaque frame, le comparer a sa taille réelle et en déduire ma distance caméra paysage
-	//! Pour l'instant sans marqueur on suppose la distance = 50 cm
-
-
-
-
-
-
-	decalagePixelHorizontal = distanceCameraPaysage * positionTete[0]/positionTete[1]/pixelParMetre;
-	decalagePixelVertical =  distanceCameraPaysage * positionTete[2]/positionTete[1]/pixelParMetre;
 
 	//! on l'affiche en boucle !
 	while(key!= KEY_ESCAPE){
@@ -115,20 +101,34 @@ int main(){
 		imshow(windowNameCapture2, imgFen);
 
 
+		//!\\POUR PAUL : INSERER ICI LE CALCUL DE LA POSITION DE LA TETE//!\\
 
+		//positionTete=...
 
-		if (GetKeyState(VK_UP)& 0x8000/*Check if high-order bit is set (1 << 15)*/) decalagePixelVertical++;
-		if (GetKeyState(VK_DOWN)& 0x8000/*Check if high-order bit is set (1 << 15)*/) decalagePixelVertical--;
-		if (GetKeyState(VK_LEFT)& 0x8000/*Check if high-order bit is set (1 << 15)*/) decalagePixelHorizontal++;
-		if (GetKeyState(VK_RIGHT)& 0x8000/*Check if high-order bit is set (1 << 15)*/) decalagePixelHorizontal--;
+	//! on change l'image obtenue
+	//! d'après de longs calculs (thalès), l'image obtenue dépend de la distance de la caméra au "paysage"...
+	//! On va donc récupérer la taille du marqueur à chaque frame, le comparer a sa taille réelle et en déduire ma distance caméra paysage
+	//! Pour l'instant sans marqueur on suppose la distance = 50 cm
 
-		Range decoupageLigne2(decoupageLigne.start+decalagePixelVertical,decoupageLigne.end+decalagePixelVertical);
-		Range decoupageColonne2(decoupageColonne.start+decalagePixelHorizontal,decoupageColonne.end+decalagePixelHorizontal);
 		
-		//! on coupe l'image et on l'affiche
+
+		calculDecalageFenetre(positionTete, decalagePixelVertical, decalagePixelHorizontal, distanceCameraPaysage, pixelParMetre);
+		
+//		appuiTouche(decalagePixelVertical, decalagePixelHorizontal);  Pour le debogage
+
+		cv::Range decoupageLigne2;
+		cv::Range decoupageColonne2;
+
+		if (decoupageImage(decoupageLigne, decoupageColonne, decalagePixelHorizontal, decalagePixelVertical , decoupageColonne2, decoupageLigne2 , curImg))
+		{
+		//! Si c'est possible on coupe l'image et on l'affiche
 		imgFen2 = * new Mat(heightFrame,widthFrame, 0);
 		imgFen2 = curImg(decoupageLigne2,decoupageColonne2);
 		imshow(windowNameCapture3, imgFen2);
+
+		}
+
+
 		
 
 		key = waitKey(1);
