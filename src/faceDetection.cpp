@@ -28,11 +28,11 @@ void setEyeDistance(float dist) {
 }
 
 bool calibrateDepth(Mat & img) {
-  Point3d temp;
+  Point3f temp;
   return detectEyes(img, &temp, 1, true, false, true);
 }
 
-bool detectEyes( Mat& img, Point3d * relative_head_position,  double scale, bool draw_eyes, bool draw_arrow, bool calibrate)
+bool detectEyes( Mat& img, Point3f * relative_head_position,  double scale, bool draw_eyes, bool draw_arrow, bool calibrate)
 {
 
   // Load xml files if not loaded
