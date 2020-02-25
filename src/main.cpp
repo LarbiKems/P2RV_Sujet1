@@ -196,7 +196,7 @@ int main()
 
 		// Analyse de l'image et détection des yeux
 		// relative_pos est mis à jour si les yeux sont détectés
-		detectEyes(currentFaceImage, &relative_pos, 1, true, true));
+		detectEyes(currentFaceImage, &relative_pos, 1, true, true);
 
 
 		// ! on coupe l'image pour qu'elle soit de la taille de la fenetre (position de la cam�ra en haut � droite de l'�cran)
