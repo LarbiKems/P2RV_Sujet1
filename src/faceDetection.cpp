@@ -2,6 +2,9 @@
 #include <cmath>
 using namespace std;
 
+// /!\ le using namespace cv ne doit pas être mis dans un .h, car ça ne fonctionne pas sur Windows...
+using namespace cv;
+
 // Structure qui regroupe toutes les variables nécessaire à la détection de la tête
 struct
 {
@@ -37,6 +40,7 @@ bool calibrateDepth(Mat &img)
 
 bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool draw_eyes, bool draw_arrow, bool calibrate)
 {
+	
 
   // Load xml files if not loaded
   if (!headDetector.xml_files_loaded)
@@ -55,12 +59,22 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
   cvtColor(img, gray, COLOR_BGR2GRAY); // Convert to Gray Scale
   double fx = 1 / scale;
 
+  
+
   // Resize the Grayscale Image
   resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
-  equalizeHist(smallImg, smallImg);
+
+  // TODO: Régler ce pb!!!
+  // EN DESSOUS
+  Mat temp_img = smallImg.clone();
+  equalizeHist(smallImg, temp_img);
+  // AU DESSUS
+  
 
   // Detect faces of different sizes using cascade classifier
   headDetector.cascade.detectMultiScale(smallImg, faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60));
+
+  
 
   // Colors used for Drawing tool
   Scalar blue = Scalar(255, 0, 0);
