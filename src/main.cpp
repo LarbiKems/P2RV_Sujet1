@@ -186,6 +186,9 @@ int main()
 
 	//! Boucle principale
 	Point3f relative_pos(0, 0, 0);
+
+	imgFen2 = currentMainImage(decoupageLigne, decoupageColonne);
+	
 	while (key != KEY_ESCAPE)
 	{
 
@@ -197,7 +200,7 @@ int main()
 		// Analyse de l'image et détection des yeux
 		// relative_pos est mis à jour si les yeux sont détectés
 		detectEyes(currentFaceImage, &relative_pos, 1, true, true);
-
+		cout << relative_pos << endl;
 
 		// ! on coupe l'image pour qu'elle soit de la taille de la fenetre (position de la cam�ra en haut � droite de l'�cran)
 		imgFen = currentMainImage(decoupageLigne, decoupageColonne);
@@ -222,7 +225,7 @@ int main()
 		else
 		{
 			cout << "L'image est sortie du champs" << endl;
-			imgFen2 = imgFen;
+			//imgFen2 = imgFen;
 		}
 
 		// Affichage des images

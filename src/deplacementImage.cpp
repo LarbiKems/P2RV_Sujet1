@@ -16,8 +16,9 @@ void appuiTouche(int &decalagePixelVertical, int &decalagePixelHorizontal){
 
 //! Calcul du decalage en pixel par rapport a la position de la tete (#Thal�s)
 void calculDecalageFenetre(cv::Point3f positionTete,int &decalagePixelVertical, int &decalagePixelHorizontal, float distanceCameraPaysage, float pixelParMetre){
-		decalagePixelHorizontal = distanceCameraPaysage * positionTete.x/positionTete.y/pixelParMetre;
-		decalagePixelVertical =  distanceCameraPaysage * positionTete.z/positionTete.y/pixelParMetre;
+		decalagePixelHorizontal = 100000*pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.y;
+		decalagePixelVertical =  100000*pixelParMetre*distanceCameraPaysage * positionTete.z/positionTete.y;
+		std::cout << "decalagePixelHorizontal "<<100000*pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.y<< std::endl;
 }
 
 
@@ -33,9 +34,11 @@ bool decoupageImage(const cv::Range decoupageLigne, const cv::Range decoupageCol
 		if ((decoupageLigne2.start <0) || (decoupageColonne2.start<0) || (decoupageLigne2.end > curImg.rows) || (decoupageColonne2.end > curImg.cols))
 		{
 			//Debogage
-			//std::cout<< decoupageLigne2.start << std::endl <<decoupageColonne2.start << std::endl << decoupageLigne2.end << std::endl << decoupageColonne2.end << std::endl;
+			
 			return false;
 		}
+		std::cout<< "Ligne: " << decoupageLigne2.start <<", " << decoupageLigne2.end << std::endl;
+		std::cout<< "Colonne: " << decoupageColonne2.start <<", " << decoupageColonne2.end << std::endl;
 		return true;
 }
 
