@@ -133,6 +133,9 @@ int main()
 	while ((key != KEY_ESCAPE) && (key != ENTER_KEY))
 	{
 		faceCamera >> currentFaceImage;
+
+		// Effet mirroir
+		flip(currentFaceImage, currentFaceImage, 1);
 		Point3f temp;
 		// Affiche de l'image courante et dessin des yeux si ils sont détectés
 
@@ -193,6 +196,8 @@ int main()
 	{
 
 		faceCamera >> currentFaceImage;
+		// Effet mirroir
+		flip(currentFaceImage, currentFaceImage, 1);
 #if (NB_CAM_AVAILABLE == 2)
 		mainCamera >> currentMainImage;
 #endif
