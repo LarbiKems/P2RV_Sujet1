@@ -16,9 +16,9 @@ void appuiTouche(int &decalagePixelVertical, int &decalagePixelHorizontal){
 
 //! Calcul du decalage en pixel par rapport a la position de la tete (#Thal�s)
 void calculDecalageFenetre(cv::Point3f positionTete,int &decalagePixelVertical, int &decalagePixelHorizontal, float distanceCameraPaysage, float pixelParMetre){
-		decalagePixelHorizontal = 100000*pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.y;
-		decalagePixelVertical =  100000*pixelParMetre*distanceCameraPaysage * positionTete.z/positionTete.y;
-		std::cout << "decalagePixelHorizontal "<<100000*pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.y<< std::endl;
+		decalagePixelHorizontal = pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.z;
+		decalagePixelVertical =  pixelParMetre*distanceCameraPaysage * positionTete.y/positionTete.z;
+		std::cout << "decalagePixelHorizontal "<<pixelParMetre*distanceCameraPaysage * positionTete.x/positionTete.y<< std::endl;
 }
 
 

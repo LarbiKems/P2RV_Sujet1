@@ -1,3 +1,8 @@
+///Première Version du Projet. Elle contient un programme fonctionnel : un déplacement a droite de la tête induit bien un déplacement
+///a gauche de l'image. Cependant, on preferera utiliser des matrices de projections pour obtenir un résultat plus réaliste.
+
+
+
 #define NB_CAM_AVAILABLE 1
 // inclusion des biblioth�ques, dont OpenCV
 
@@ -16,7 +21,7 @@ using namespace cv;
 // Default wdth and height of the video
 #define DEFAULT_VIDEO_WIDTH 800
 #define DEFAULT_VIDEO_HEIGHT 600
-#define pixelParMetre 0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
+#define pixelParMetre 1/0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
 // Defining escape key
 #define KEY_ESCAPE 27
 #define ENTER_KEY 13
@@ -220,7 +225,7 @@ int main()
 		cv::Range decoupageLigne2;
 		cv::Range decoupageColonne2;
 
-		if (decoupageImage(decoupageLigne, decoupageColonne, decalagePixelHorizontal, decalagePixelVertical, decoupageColonne2, decoupageLigne2, currentMainImage))
+		if (decoupageImage(decoupageLigne, decoupageColonne, decalagePixelHorizontal, decalagePixelVertical, decoupageLigne2, decoupageColonne2, currentMainImage))
 		{
 			//! Si c'est possible on coupe l'image et on l'affiche
 			imgFen2 = *new Mat(heightFrame, widthFrame, 0);
