@@ -8,6 +8,7 @@
 // Inclusion des fichiers utiles à la reconnaissance de visage
 #include "faceDetection.hpp"
 #include "deplacementImage.h"
+#include "CalibrationCamera.h"
 
 // namespace
 using namespace std;
@@ -18,8 +19,10 @@ using namespace cv;
 #define DEFAULT_VIDEO_HEIGHT 600
 #define pixelParMetre 0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
 // Defining escape key
-#define KEY_ESCAPE 27
+
 #define ENTER_KEY 13
+
+char key;
 
 VideoCapture faceCamera; // Caméra frontale
 VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
@@ -33,7 +36,7 @@ float distanceCameraPaysage = 0.5f;  //! distance paysage cam�ra (en m)
 int decalagePixelHorizontal = 0;	 //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 int decalagePixelVertical = 0;		 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
-
+Mat intrinsicCam;					     //! Matrice des paramètres intrinsèques de la caméra
 int main()
 {
 
@@ -120,12 +123,21 @@ int main()
 	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
 	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
 
+
+	/*! Calibration de la caméra et récupération de la matrice intrinsèque */
+
+	intrinsicCam = calibrateCamera(mainCamera);
+	
+
+
+
 	/*! Première étape: calibration de la caméra "face" */
 	float dist_btw_eyes;
 	cout << "Distance entre les deux yeux (cm): " << endl;
 	cin >> dist_btw_eyes;
 	setEyeDistance(dist_btw_eyes);
 	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
+
 
 	bool calibrating = false;
 
