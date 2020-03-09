@@ -2,6 +2,10 @@
 #include <cmath>
 using namespace std;
 
+// /!\ le using namespace cv ne doit pas être mis dans un .h, car ça ne fonctionne pas sur Windows...
+using namespace cv;
+
+vector<Rect> *faces = new vector<Rect>();
 // Structure qui regroupe toutes les variables nécessaire à la détection de la tête
 struct
 {
@@ -38,6 +42,7 @@ bool calibrateDepth(Mat &img)
 bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool draw_eyes, bool draw_arrow, bool calibrate)
 {
 
+  faces->clear();
   // Load xml files if not loaded
   if (!headDetector.xml_files_loaded)
   {
@@ -49,7 +54,6 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
     return false;
   }
 
-  vector<Rect> faces;
   Mat gray, smallImg;
 
   cvtColor(img, gray, COLOR_BGR2GRAY); // Convert to Gray Scale
@@ -57,30 +61,35 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
 
   // Resize the Grayscale Image
   resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
-  equalizeHist(smallImg, smallImg);
+
+  // TODO: Régler ce pb!!!
+  // EN DESSOUS
+  Mat temp_img = smallImg.clone();
+  equalizeHist(smallImg, temp_img);
+  // AU DESSUS
 
   // Detect faces of different sizes using cascade classifier
-  headDetector.cascade.detectMultiScale(smallImg, faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60));
+  headDetector.cascade.detectMultiScale(smallImg, *faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60));
 
   // Colors used for Drawing tool
   Scalar blue = Scalar(255, 0, 0);
   Scalar red = Scalar(0, 255, 0);
 
   // If 2 eyes were found
-  if (faces.size() == 2)
+  if (faces->size() == 2)
   {
 
     Point p1, p2;
     int radius1, radius2;
 
     // Premier oeil
-    Rect r = faces.at(0);
+    Rect r = faces->at(0);
     p1.x = cvRound((r.x + r.width * 0.5) * scale);
     p1.y = cvRound((r.y + r.height * 0.5) * scale);
     radius1 = cvRound((r.width + r.height) * 0.25 * scale);
 
     // Second oeil
-    r = faces.at(1);
+    r = faces->at(1);
     p2.x = cvRound((r.x + r.width * 0.5) * scale);
     p2.y = cvRound((r.y + r.height * 0.5) * scale);
     radius2 = cvRound((r.width + r.height) * 0.25 * scale);
@@ -91,8 +100,9 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
     // Point au centre de l'image
     Point img_center(smallImg.cols / 2, smallImg.rows / 2);
 
-    // Position relative en pixels, en 2D (dans le plan xy)
+    // Position relative en pixels,s en 2D (dans le plan xy)
     Point relative_pos = center - img_center;
+    relative_pos.y *= -1;
 
     // Distance entre les deux yeux en pixels
     float dist_btw_eyes_px = norm(p1 - p2);

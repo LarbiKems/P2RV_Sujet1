@@ -21,7 +21,6 @@
 #include "opencv2/objdetect.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
-using namespace cv;
 
 /*!
   \brief Detects the eyes on an image and return the relative position from the center of the image
@@ -32,7 +31,7 @@ using namespace cv;
   \param[in] draw_arrow True if we want to draw an arrow from the center of the image to the center of the eyes
   \param[in] calibrate True if we want to calibrate the depth
 */
-bool detectEyes( Mat& img, Point3f * relative_head_position, double scale=1.0, bool draw_eyes=false, bool draw_arrow=false, bool calibrate=false);
+bool detectEyes(cv::Mat &img, cv::Point3f *relative_head_position, double scale = 1.0, bool draw_eyes = false, bool draw_arrow = false, bool calibrate = false);
 
 /*!
   \brief Sets the dist_btw_eyes value of the headDetector
@@ -44,4 +43,4 @@ void setEyeDistance(float dist);
   \brief Try to calibrate the depth with the image. Returns true if success
   \param[in] img Image we use for depth calibration
 */
-bool calibrateDepth(Mat & img);
+bool calibrateDepth(cv::Mat &img);

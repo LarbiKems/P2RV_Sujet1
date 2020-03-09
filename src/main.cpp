@@ -145,6 +145,9 @@ int main()
 	while ((key != KEY_ESCAPE) && (key != ENTER_KEY))
 	{
 		faceCamera >> currentFaceImage;
+
+		// Effet mirroir
+		flip(currentFaceImage, currentFaceImage, 1);
 		Point3f temp;
 		// Affiche de l'image courante et dessin des yeux si ils sont détectés
 
@@ -171,13 +174,13 @@ int main()
 			else
 			{
 				cout << "Calibration annulée. Repositionnez-vous et appuyez sur c" << endl;
-				detectEyes(currentFaceImage, &temp, 1.0, true);
+				bool detected = detectEyes(currentFaceImage, &temp, 1.0, true);
 				calibrating = false;
 			}
 		}
 		else
 		{
-			detectEyes(currentFaceImage, &temp, 1.0, true);
+			bool detected=detectEyes(currentFaceImage, &temp, 1.0, true);
 		}
 
 		imshow(faceImageName, currentFaceImage);
@@ -205,13 +208,15 @@ int main()
 	{
 
 		faceCamera >> currentFaceImage;
+		// Effet mirroir
+		flip(currentFaceImage, currentFaceImage, 1);
 #if (NB_CAM_AVAILABLE == 2)
 		mainCamera >> currentMainImage;
 #endif
 
 		// Analyse de l'image et détection des yeux
 		// relative_pos est mis à jour si les yeux sont détectés
-		detectEyes(currentFaceImage, &relative_pos, 1, true, true);
+		bool detected = detectEyes(currentFaceImage, &relative_pos, 1, true, true);
 		cout << relative_pos << endl;
 
 		// ! on coupe l'image pour qu'elle soit de la taille de la fenetre (position de la cam�ra en haut � droite de l'�cran)
