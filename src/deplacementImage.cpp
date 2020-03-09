@@ -25,7 +25,7 @@ void calculDecalageFenetre(cv::Point3f positionTete, int &decalagePixelVertical,
 	decalagePixelVertical = 100000 * pixelParMetre * distanceCameraPaysage * positionTete.z / positionTete.y;
 	std::cout << "decalagePixelHorizontal " << 100000 * pixelParMetre * distanceCameraPaysage * positionTete.x / positionTete.y << std::endl;
 }
-
+#if 0
 void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition, cv::Mat result)
 {
 	result.release();
@@ -65,7 +65,7 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 			// Calcul Point réel (x,y,z) dans le repère de la caméra.
 			Mat Puv = (Mat_<float>(2, 1) << u, v);
 
-			Mat Pxyz = projMatrix.inv * Puv;
+			Mat Pxyz = projMatrix.inv(DECOMP_LU ) * Puv;
 
 			// Calcul de la position du point en question dans l'écran de la caméra associée à la tête
 			Mat Pwz = headProjMatrix * Pxyz;
@@ -80,7 +80,7 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 		}
 	}
 }
-
+#endif
 //! cr�e les bon range pour l'image finale. Renvoie false si le d�coupage fait sortir de l'image obtenu par la cam�ra.
 //Pour l'avenir : peut �tre impl�menter plut�t un affichage de pixels noirs quand on d�passe de l'image
 bool decoupageImage(const cv::Range decoupageLigne, const cv::Range decoupageColonne, const int decalagePixelHorizontal, const int decalagePixelVertical, cv::Range &decoupageLigne2, cv::Range &decoupageColonne2, cv::Mat curImg)

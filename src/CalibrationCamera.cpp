@@ -1,8 +1,11 @@
 // OpenCVCalibration.cpp
+#include "CalibrationCamera.h"
+using namespace cv;
+using namespace std;
 
 cv::Mat calibrateCamera(VideoCapture cap)
 {
-	
+	char key;
 	int numeroCamera = 0; 
 	int numCornersHor = 9;
 	int numCornersVer = 6;
@@ -35,35 +38,35 @@ cv::Mat calibrateCamera(VideoCapture cap)
 		cin >> numCornersVer;
 		cout << "Quel nombre d'image pour la calibration voulez-vous ?" << endl;
 		cin >> nombreImageCalibration;
-		if (numeroCamera==-1){break;}
+		if (numeroCamera == -1) { break; }
 		cap.open(numeroCamera);
 	}
 
 	bool couleurGris = false;
 
-	while (compteurImageCalibration<nombreImageCalibration){
+	while (compteurImageCalibration < nombreImageCalibration) {
 		// Getting the new image from the camera
 		cap >> image;
 
 		// Showing the image in the window
-		key=waitKey(1);
+		key = waitKey(1);
 
 		//Détection d'un échiquier
 		cv::Size board_sz = cv::Size(numCornersHor, numCornersVer);
 		vector<cv::Point2f> corners;
 		bool found = findChessboardCorners(image, board_sz, corners, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
-		
+
 		//Calibration d'une caméra
 		if (found) {
 			compteurImageCalibration++; //si c'est trouvé, alors on a une image en plus pour la calibration
-			cvtColor(image,gray_image,CV_BGR2GRAY);
+			cvtColor(image, gray_image, CV_BGR2GRAY);
 			cornerSubPix(gray_image, corners, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 			drawChessboardCorners(image, board_sz, corners, found);
 			image_points.push_back(corners);
 			vector<cv::Point3f> ligne;
-			for (int i=0;i<numCornersHor;i++){
-				for (int j=0;j<numCornersVer;j++){
-					Point3f point(i,j,0);
+			for (int i = 0; i < numCornersHor; i++) {
+				for (int j = 0; j < numCornersVer; j++) {
+					Point3f point(i, j, 0);
 					ligne.push_back(point);
 				}
 			}
@@ -71,18 +74,17 @@ cv::Mat calibrateCamera(VideoCapture cap)
 		}
 
 		//Affichage
-		if (key=='g'){couleurGris = !couleurGris;}
-		if (!couleurGris){
-			imshow("OpenCV Calibration",image);
+		if (key == 'g') { couleurGris = !couleurGris; }
+		if (!couleurGris) {
+			imshow("OpenCV Calibration", image);
 		}
-		else{
-			cvtColor(image,gray_image,CV_BGR2GRAY);
-			imshow("OpenCV Calibration",gray_image);
+		else {
+			cvtColor(image, gray_image, CV_BGR2GRAY);
+			imshow("OpenCV Calibration", gray_image);
 		}
 
-		if (key==ESC_KEY){break;}
+		if (key == ESC_KEY) { break; }
 	}
-
 	calibrateCamera(object_points, image_points, image.size(), intrinsic, distCoeffs, rvecs, tvecs);
 	// Destroying the windows
 	destroyWindow("OpenCV Calibration");

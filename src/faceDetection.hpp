@@ -22,6 +22,9 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 
+// Initialisation des variables pour la détection de face
+void init_faceDetection();
+
 /*!
   \brief Detects the eyes on an image and return the relative position from the center of the image
   \param[in] img Image on which we want to detect the eyes

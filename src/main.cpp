@@ -8,7 +8,7 @@
 // Inclusion des fichiers utiles à la reconnaissance de visage
 #include "faceDetection.hpp"
 #include "deplacementImage.h"
-#include "CalibrationCamera.h"
+//#include "CalibrationCamera.h"
 
 // namespace
 using namespace std;
@@ -21,8 +21,8 @@ using namespace cv;
 // Defining escape key
 
 #define ENTER_KEY 13
+#define KEY_ESCAPE 27
 
-char key;
 
 VideoCapture faceCamera; // Caméra frontale
 VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
@@ -39,6 +39,7 @@ bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
 Mat intrinsicCam;					     //! Matrice des paramètres intrinsèques de la caméra
 int main()
 {
+	init_faceDetection();
 
 	//! on r�cup�re l'image de la cam�ra avant dans une matrice
 	//on r�cup�re l'image
@@ -126,7 +127,7 @@ int main()
 
 	/*! Calibration de la caméra et récupération de la matrice intrinsèque */
 
-	intrinsicCam = calibrateCamera(mainCamera);
+//	intrinsicCam = calibrateCamera(mainCamera);
 	
 
 
