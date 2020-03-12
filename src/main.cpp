@@ -1,4 +1,4 @@
-#define NB_CAM_AVAILABLE 1
+#define NB_CAM_AVAILABLE 2
 // inclusion des biblioth�ques, dont OpenCV
 
 #include <string.h>
@@ -8,7 +8,8 @@
 // Inclusion des fichiers utiles à la reconnaissance de visage
 #include "faceDetection.hpp"
 #include "deplacementImage.h"
-//#include "CalibrationCamera.h"
+#include "CalibrationCamera.h"
+#include "keyboard.h"
 
 // namespace
 using namespace std;
@@ -18,10 +19,7 @@ using namespace cv;
 #define DEFAULT_VIDEO_WIDTH 800
 #define DEFAULT_VIDEO_HEIGHT 600
 #define pixelParMetre 0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
-// Defining escape key
 
-#define ENTER_KEY 13
-#define KEY_ESCAPE 27
 
 
 VideoCapture faceCamera; // Caméra frontale
@@ -35,7 +33,6 @@ Mat imgFen2;						 //! l'image d�coup�e avec mouvement de la tete
 float distanceCameraPaysage = 0.5f;  //! distance paysage cam�ra (en m)
 int decalagePixelHorizontal = 0;	 //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 int decalagePixelVertical = 0;		 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
 Mat intrinsicCam;					     //! Matrice des paramètres intrinsèques de la caméra
 int main()
 {
@@ -99,6 +96,17 @@ int main()
 	std::cout << "Frame width = " << widthFrame << std::endl;
 	std::cout << "Frame height = " << heightFrame << std::endl;
 
+	
+
+	//! on chosit la fenetre qu'on veut (ici un peu au hasard)
+	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
+	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
+
+
+	/*! Calibration de la caméra et récupération de la matrice intrinsèque */
+	intrinsicCam = calibrateCamera(mainCamera);
+	calibrateFaceCamera(faceCamera);
+
 	//! création des fenetres OpenCV
 
 	//! Ce que renvoit la caméra
@@ -119,84 +127,6 @@ int main()
 	string faceImageName = "Image après détection de visage";
 	namedWindow(faceImageName, CV_WINDOW_AUTOSIZE);
 	imshow(faceImageName, currentFaceImage);
-
-	//! on chosit la fenetre qu'on veut (ici un peu au hasard)
-	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
-	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
-
-
-	/*! Calibration de la caméra et récupération de la matrice intrinsèque */
-
-//	intrinsicCam = calibrateCamera(mainCamera);
-	
-
-
-
-	/*! Première étape: calibration de la caméra "face" */
-	float dist_btw_eyes;
-	cout << "Distance entre les deux yeux (cm): " << endl;
-	cin >> dist_btw_eyes;
-	setEyeDistance(dist_btw_eyes);
-	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
-
-
-	bool calibrating = false;
-
-	//! Boucle de calibration
-	while ((key != KEY_ESCAPE) && (key != ENTER_KEY))
-	{
-		faceCamera >> currentFaceImage;
-
-		// Effet mirroir
-		flip(currentFaceImage, currentFaceImage, 1);
-		Point3f temp;
-		// Affiche de l'image courante et dessin des yeux si ils sont détectés
-
-		if ((key == 'c') || calibrating)
-		{
-			if (key != 'e')
-			{
-				headDetectorCalibrated = calibrateDepth(currentFaceImage);
-
-				if (headDetectorCalibrated)
-				{
-					cout << "Calibration effectuée. \n\t- Appuyer sur Entrée pour confirmer.\n\t- Appuyer sur c pour refaire la calibration" << endl;
-					calibrating = false;
-				}
-				else
-				{
-					if (key == 'c')
-					{
-						cout << "Calibration (appuyer sur e pour annuler)..." << endl;
-						calibrating = true;
-					}
-				}
-			}
-			else
-			{
-				cout << "Calibration annulée. Repositionnez-vous et appuyez sur c" << endl;
-				bool detected = detectEyes(currentFaceImage, &temp, 1.0, true);
-				calibrating = false;
-			}
-		}
-		else
-		{
-			bool detected=detectEyes(currentFaceImage, &temp, 1.0, true);
-		}
-
-		imshow(faceImageName, currentFaceImage);
-
-		key = waitKey(1);
-	}
-
-	if (!headDetectorCalibrated)
-	{
-		cout << "Calibration non effectuée. Les paramètres par défaut seront utilisés." << endl;
-	}
-	else
-	{
-		cout << "Calibration validée" << endl;
-	}
 
 	key = 'a';
 

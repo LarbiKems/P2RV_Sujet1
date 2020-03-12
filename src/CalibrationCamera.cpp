@@ -28,6 +28,8 @@ cv::Mat calibrateCamera(VideoCapture cap)
 	//Images caméra en direct
 
 	//Tant qu'une caméra n'est pas ouverte, on harcèle l'utilisateur
+	// En théorie, la caméra a déjà été ouverte
+#if 0
 	while (!cap.isOpened())
 	{
 		cout << "Quel numero de camera voulez-vous ?" << endl;
@@ -41,6 +43,7 @@ cv::Mat calibrateCamera(VideoCapture cap)
 		if (numeroCamera == -1) { break; }
 		cap.open(numeroCamera);
 	}
+#endif
 
 	bool couleurGris = false;
 

@@ -47,3 +47,5 @@ void setEyeDistance(float dist);
   \param[in] img Image we use for depth calibration
 */
 bool calibrateDepth(cv::Mat &img);
+
+void calibrateFaceCamera(cv::VideoCapture faceCamera);
