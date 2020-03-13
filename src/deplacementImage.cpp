@@ -25,53 +25,77 @@ void calculDecalageFenetre(cv::Point3f positionTete, int &decalagePixelVertical,
 	decalagePixelVertical = 100000 * pixelParMetre * distanceCameraPaysage * positionTete.z / positionTete.y;
 	std::cout << "decalagePixelHorizontal " << 100000 * pixelParMetre * distanceCameraPaysage * positionTete.x / positionTete.y << std::endl;
 }
-#if 0
+
 void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition, cv::Mat result)
 {
+	float focal_length = 0.5;
 	result.release();
 	result = Mat(Size(img.cols, img.rows), CV_8UC3, Scalar(0, 0, 0));
 
 	// Calcul de la matrice de transformation de la caméra associée à la tête
 
+	/*! Matrice de rotation */
 	// Rotation autour de Y
-	float norm = std::sqrt(headPosition.dot(headPosition));
-	float cosY = 0; // TODO;
-	float sinY = 0; //TODO;
+	float normY = std::sqrt(std::pow(headPosition.x, 2) + std::pow(headPosition.z, 2));
+	float cosY = headPosition.z / normY; 
+	float sinY = headPosition.x / normY; 
 	Mat Ry = (Mat_<float>(3, 3) << 1, 0, 0, 0, cosY, -sinY, 0, sinY, cosY);
 
 	// Rotation autour de X
-	float cosX = 0; // TODO;
-	float sinX = 0; //TODO;
+	float normX = std::sqrt(std::pow(headPosition.y, 2) + std::pow(headPosition.z, 2));
+	float cosX = headPosition.z / normX; 
+	float sinX = headPosition.y / normX; 
 	Mat Rx = (Mat_<float>(3, 3) << 1, 0, 0, 0, cosX, -sinX, 0, sinX, cosX);
 
-	// Rotation autour de Z
-	float cosZ = 0; // TODO;
-	float sinZ = 0; //TODO;
+	// Rotation autour de Z --> pour l'instant on considère pas de rotation
+	float cosZ = 1; // TODO or not TODO?;
+	float sinZ = 0; //TODO or not TODO?;
 	Mat Rz = (Mat_<float>(3, 3) << 1, 0, 0, 0, cosZ, -sinZ, 0, sinZ, cosZ);
 
 	Mat Rot = Rx * Ry * Rz;
 
-	// Matrice de transformation
-	// TODO: Construire [R | headPosition]
-	Mat headRTMatrix = (Mat_<float>(3, 4) << 0); // à remplir (pas sur des dimensions)
+	/*! Matrice de transformation */
+	// [R | headPosition]
+	Mat headRTMatrix = Mat(3,4, CV_32FC1, 0.0f); // à remplir (pas sur des dimensions)
+	for(int i=0; i<3; i++) {
+		for (int j=0; j<3; j++) {
+			float a = Rot.at<float>(i,j) ;
+			headRTMatrix.at<float>(i,j) = a;
+		}
+	}
+	headRTMatrix.at<float>(0,3) = headPosition.x;
+	headRTMatrix.at<float>(1,3) = headPosition.y;
+	headRTMatrix.at<float>(2,3) = headPosition.z;
 
-	Mat headProjMatrix = projMatrix * headRTMatrix;
-	
+	/*! Matrice avec la distance focale */
+	Mat FM = (Mat_<float>(3, 4) << focal_length, 0, 0, 0, 
+		0, focal_length, 0, 0, 
+		0,0,1,0);
+
+	Mat headProjMatrix = Mat(3,4, CV_32FC1);
+	headProjMatrix = projMatrix * headRTMatrix;
+	Mat projMatrixInv = projMatrix.inv(DECOMP_LU);
 	// TODO: choisir le même repère pour la création de matrice de transformation et la détection de la tête
 	for (int u = 0; u < img.rows; u++)
 	{
 		for (int v = 0; v < img.cols; v++)
 		{
 			// Calcul Point réel (x,y,z) dans le repère de la caméra.
-			Mat Puv = (Mat_<float>(2, 1) << u, v);
+			Mat Puv = (Mat_<float>(3, 1) << u, v,1);
 
-			Mat Pxyz = projMatrix.inv(DECOMP_LU ) * Puv;
+			Mat Pxyz = projMatrixInv * Puv;
+			float s = Puv.at<float>(2,0);
 
+			float X= Pxyz.at<float>(0,0)/focal_length;
+			float Y= Pxyz.at<float>(1,0)/focal_length;
+			float Z= Pxyz.at<float>(2,0);
+
+			Mat xyz1 = (Mat_<float>(4, 1) << X, Y,Z,1);
 			// Calcul de la position du point en question dans l'écran de la caméra associée à la tête
-			Mat Pwz = headProjMatrix * Pxyz;
+			Mat Pwz = projMatrix*FM*headRTMatrix * xyz1;
 			int w = (int)Pwz.at<float>(0);
 			int z = (int)Pwz.at<float>(1);
-
+			
 			// Copie du pixel u,v correspondant dans la matrice de sortie à la place w, z
 			if (w < result.rows && z < result.cols)
 			{
@@ -80,7 +104,7 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 		}
 	}
 }
-#endif
+
 //! cr�e les bon range pour l'image finale. Renvoie false si le d�coupage fait sortir de l'image obtenu par la cam�ra.
 //Pour l'avenir : peut �tre impl�menter plut�t un affichage de pixels noirs quand on d�passe de l'image
 bool decoupageImage(const cv::Range decoupageLigne, const cv::Range decoupageColonne, const int decalagePixelHorizontal, const int decalagePixelVertical, cv::Range &decoupageLigne2, cv::Range &decoupageColonne2, cv::Mat curImg)

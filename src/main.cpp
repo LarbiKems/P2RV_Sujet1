@@ -28,8 +28,7 @@ Mat currentFaceImage;	//! l'image courante de la caméra frontale
 Mat currentMainImage;	//! l'image courante de la caméra avant
 
 int key = 0;						 //! touche du clavier
-Mat imgFen;							 //! l'image d�coup�e
-Mat imgFen2;						 //! l'image d�coup�e avec mouvement de la tete
+Mat finalImage;						 //! l'image d�coup�e avec mouvement de la tete
 float distanceCameraPaysage = 0.5f;  //! distance paysage cam�ra (en m)
 int decalagePixelHorizontal = 0;	 //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 int decalagePixelVertical = 0;		 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
@@ -110,21 +109,16 @@ int main()
 	//! création des fenetres OpenCV
 
 	//! Ce que renvoit la caméra
-	string mainImageName = "Image obtenue par la caméra";
+	string mainImageName = "Image obtenue par la camera";
 	namedWindow(mainImageName, CV_WINDOW_AUTOSIZE);
 	imshow(mainImageName, currentMainImage);
 
 	//! L'image d�coup�e effet fen�tre
-	string mainImageCutName = "Image obtenue par la caméra, coupée";
-	namedWindow(mainImageCutName, CV_WINDOW_AUTOSIZE);
-	//imshow(mainImageCutName, currentFaceImage);
+	string finalImageName = "Resultat";
+	namedWindow(finalImageName, CV_WINDOW_AUTOSIZE);
+	//imshow(finalImageName, currentFaceImage);
 
-	//! L'image d�coup�e effet fen�tre
-	string mainImageAfterTreatmentName = "Résultat";
-	namedWindow(mainImageAfterTreatmentName, CV_WINDOW_AUTOSIZE);
-	//imshow(mainImageAfterTreatmentName, currentFaceImage);
-
-	string faceImageName = "Image après détection de visage";
+	string faceImageName = "Image apres detection de visage";
 	namedWindow(faceImageName, CV_WINDOW_AUTOSIZE);
 	imshow(faceImageName, currentFaceImage);
 
@@ -132,15 +126,14 @@ int main()
 
 	//! Boucle principale
 	Point3f relative_pos(0, 0, 0);
-
-	imgFen2 = currentMainImage(decoupageLigne, decoupageColonne);
 	
 	while (key != KEY_ESCAPE)
 	{
-
+		//! Récupération de l'image de la caméra frontale
 		faceCamera >> currentFaceImage;
-		// Effet mirroir
-		flip(currentFaceImage, currentFaceImage, 1);
+		flip(currentFaceImage, currentFaceImage, 1); // Effet mirroir
+
+		//! Récupération de l'image de la caméra principale
 #if (NB_CAM_AVAILABLE == 2)
 		mainCamera >> currentMainImage;
 #endif
@@ -150,35 +143,11 @@ int main()
 		bool detected = detectEyes(currentFaceImage, &relative_pos, 1, true, true);
 		cout << relative_pos << endl;
 
-		// ! on coupe l'image pour qu'elle soit de la taille de la fenetre (position de la cam�ra en haut � droite de l'�cran)
-		imgFen = currentMainImage(decoupageLigne, decoupageColonne);
-
-		//! on change l'image obtenue
-		//! d'apr�s de longs calculs (thal�s), l'image obtenue d�pend de la distance de la cam�ra au "paysage"...
-		//! On va donc r�cup�rer la taille du marqueur � chaque frame, le comparer a sa taille r�elle et en d�duire ma distance cam�ra paysage
-		//! Pour l'instant sans marqueur on suppose la distance = 50 cm
-
-		calculDecalageFenetre(relative_pos, decalagePixelVertical, decalagePixelHorizontal, distanceCameraPaysage, pixelParMetre);
-
-		cv::Range decoupageLigne2;
-		cv::Range decoupageColonne2;
-
-		if (decoupageImage(decoupageLigne, decoupageColonne, decalagePixelHorizontal, decalagePixelVertical, decoupageColonne2, decoupageLigne2, currentMainImage))
-		{
-			//! Si c'est possible on coupe l'image et on l'affiche
-			imgFen2 = *new Mat(heightFrame, widthFrame, 0);
-			imgFen2 = currentMainImage(decoupageLigne2, decoupageColonne2);
-			cout << "DANS le champs" << endl;
-		}
-		else
-		{
-			cout << "L'image est sortie du champs" << endl;
-			//imgFen2 = imgFen;
-		}
+		//! Modification du point de vu à partir de la position de la tête
+		ChangementPointDeVue(currentMainImage, intrinsicCam,relative_pos, finalImage);
 
 		// Affichage des images
-		imshow(mainImageAfterTreatmentName, imgFen2);
-		imshow(mainImageCutName, imgFen);
+		imshow(finalImageName, finalImage);
 		imshow(faceImageName, currentFaceImage);
 		imshow(mainImageName, currentMainImage);
 

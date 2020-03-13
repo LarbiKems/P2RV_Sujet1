@@ -46,8 +46,7 @@ void calibrateFaceCamera(VideoCapture faceCamera) {
 	Mat currentFaceImage;
 	bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
 
-	string imageName = "Calibration de la camera frontale";
-	namedWindow(imageName, CV_WINDOW_AUTOSIZE);
+	
 
 	/*! Première étape: calibration de la caméra "face" */
 	float dist_btw_eyes;
@@ -56,6 +55,8 @@ void calibrateFaceCamera(VideoCapture faceCamera) {
 	setEyeDistance(dist_btw_eyes);
 	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
 
+	string imageName = "Calibration de la camera frontale";
+	namedWindow(imageName, CV_WINDOW_AUTOSIZE);
 
 	bool calibrating = false;
 	char key = 'a';
@@ -146,11 +147,8 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
 	// Resize the Grayscale Image
 	resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);
 
-	// TODO: Régler ce pb!!!
-	// EN DESSOUS
 	Mat temp_img = smallImg.clone();
 	equalizeHist(smallImg, temp_img);
-	// AU DESSUS
 
 	// Detect faces of different sizes using cascade classifier
 	headDetector.cascade.detectMultiScale(smallImg, *faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30), Size(60, 60));
