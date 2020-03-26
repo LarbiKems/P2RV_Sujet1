@@ -1,4 +1,5 @@
 #include "faceDetection.hpp"
+#include "keys.h"
 #include <cmath>
 using namespace std;
 
@@ -27,6 +28,82 @@ struct
   // True if the headDetector was calibrated
   bool calibrated = false;
 } headDetector;
+
+void calibrateFaceCamera(VideoCapture faceCamera) {
+	Mat currentFaceImage;
+	bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
+
+	
+
+	/*! Première étape: calibration de la caméra "face" */
+	float dist_btw_eyes;
+	cout << "Distance entre les deux yeux (cm): " << endl;
+	cin >> dist_btw_eyes;
+	setEyeDistance(dist_btw_eyes);
+	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
+
+	string imageName = "Calibration de la camera frontale";
+	namedWindow(imageName, CV_WINDOW_AUTOSIZE);
+
+	bool calibrating = false;
+	char key = 'a';
+	//! Boucle de calibration
+	while ((key != KEY_ESCAPE) && (key != ENTER_KEY))
+	{
+		faceCamera >> currentFaceImage;
+
+		// Effet mirroir
+		flip(currentFaceImage, currentFaceImage, 1);
+		Point3f temp;
+		// Affiche de l'image courante et dessin des yeux si ils sont détectés
+
+		if ((key == 'c') || calibrating)
+		{
+			if (key != 'e')
+			{
+				headDetectorCalibrated = calibrateDepth(currentFaceImage);
+
+				if (headDetectorCalibrated)
+				{
+					cout << "Calibration effectuée. \n\t- Appuyer sur Entrée pour confirmer.\n\t- Appuyer sur c pour refaire la calibration" << endl;
+					calibrating = false;
+				}
+				else
+				{
+					if (key == 'c')
+					{
+						cout << "Calibration (appuyer sur e pour annuler)..." << endl;
+						calibrating = true;
+					}
+				}
+			}
+			else
+			{
+				cout << "Calibration annulée. Repositionnez-vous et appuyez sur c" << endl;
+				bool detected = detectEyes(currentFaceImage, &temp, 1.0, true);
+				calibrating = false;
+			}
+		}
+		else
+		{
+			bool detected=detectEyes(currentFaceImage, &temp, 1.0, true);
+		}
+		imshow(imageName, currentFaceImage);
+
+		key = waitKey(1);
+	}
+
+	if (!headDetectorCalibrated)
+	{
+		cout << "Calibration non effectuée. Les paramètres par défaut seront utilisés." << endl;
+	}
+	else
+	{
+		cout << "Calibration validée" << endl;
+	}
+
+	destroyWindow(imageName);
+}
 
 void setEyeDistance(float dist)
 {

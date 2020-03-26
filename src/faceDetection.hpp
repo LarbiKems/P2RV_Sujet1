@@ -22,6 +22,7 @@
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
 
+void calibrateFaceCamera(cv::VideoCapture faceCamera);
 /*!
   \brief Detects the eyes on an image and return the relative position from the center of the image
   \param[in] img Image on which we want to detect the eyes
@@ -44,3 +45,4 @@ void setEyeDistance(float dist);
   \param[in] img Image we use for depth calibration
 */
 bool calibrateDepth(cv::Mat &img);
+

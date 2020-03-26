@@ -1,246 +1,164 @@
-///Première Version du Projet. Elle contient un programme fonctionnel : un déplacement a droite de la tête induit bien un déplacement
-///a gauche de l'image. Cependant, on preferera utiliser des matrices de projections pour obtenir un résultat plus réaliste.
+/*! Première Version du Projet. Elle contient un programme fonctionnel : un déplacement a droite de la tête 
+ *  induit bien un déplacement a gauche de l'image. Cependant, on preferera utiliser des matrices de 
+ *  projections pour obtenir un résultat plus réaliste.
+ */
 
-
-
-#define NB_CAM_AVAILABLE 1
-// inclusion des biblioth�ques, dont OpenCV
-
+// inclusion des bibliothèques
 #include <string.h>
-
 #include <vector>
 
-// Inclusion des fichiers utiles à la reconnaissance de visage
 #include "faceDetection.hpp"
 #include "deplacementImage.h"
+
+// Touches du clavier
+#include "keys.h"
 
 // namespace
 using namespace std;
 using namespace cv;
 
-// Default wdth and height of the video
-#define DEFAULT_VIDEO_WIDTH 800
-#define DEFAULT_VIDEO_HEIGHT 600
-#define pixelParMetre 1/0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
-// Defining escape key
-#define KEY_ESCAPE 27
-#define ENTER_KEY 13
-
-VideoCapture faceCamera; // Caméra frontale
-VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
-Mat currentFaceImage;	//! l'image courante de la caméra frontale
-Mat currentMainImage;	//! l'image courante de la caméra avant
-
-int key = 0;						 //! touche du clavier
-Mat imgFen;							 //! l'image d�coup�e
-Mat imgFen2;						 //! l'image d�coup�e avec mouvement de la tete
-float distanceCameraPaysage = 0.5f;  //! distance paysage cam�ra (en m)
-int decalagePixelHorizontal = 0;	 //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-int decalagePixelVertical = 0;		 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-bool headDetectorCalibrated = false; //! True si la profondeur a été calibrée
-
 int main()
 {
 
-	//! on r�cup�re l'image de la cam�ra avant dans une matrice
-	//on r�cup�re l'image
+	VideoCapture faceCamera; // Caméra frontale
+	VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
+
+	// Matrices qui stockent les images des caméras
+	Mat currentFaceImage; //! l'image courante de la caméra frontale
+	Mat currentMainImage; //! l'image courante de la caméra avant
+
+	// Demande du nombre de caméras disponibles
+	int nb_cam = -1;
+	cout << "Nombre de caméras branchées: ";
+	cin >> nb_cam;
+	if (nb_cam < 1)
+	{
+		cerr << "L'application nécessite au moins 1 caméra" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//! Ouverture de la caméra faceCamera
 	faceCamera.open(0);
 	if (!faceCamera.isOpened())
 	{
-		cerr << "Erreur lors de l'initialisation de la capture de la camera !" << endl;
+		cerr << "Erreur lors de l'initialisation de la caméra faceCamera !" << endl;
 		cerr << "Fermeture..." << endl;
 		exit(EXIT_FAILURE);
 	}
-	else
-	{
-		// on joue la premi�re image
-		faceCamera >> currentFaceImage;
-	}
 
-#if (NB_CAM_AVAILABLE == 2)
-	int camNb = 1;
-	do
+	int widthFrame;
+	int heightFrame;
+	if (nb_cam == 2)
 	{
-		cout << "Caméra n° " << camNb << endl;
-		mainCamera.open(camNb);
-		camNb++;
-	} while (!mainCamera.isOpened() && camNb < 10);
-
-	if (!mainCamera.isOpened())
-	{
-		cerr << "Erreur lors de l'initialisation de la caméra mainCamera !" << endl;
-		cerr << "Fermeture..." << endl;
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		// on joue la première image
-		mainCamera >> currentMainImage;
-	}
-	//! on r�cup�re la largeur et hauteur de l'image
-	int widthFrame = mainCamera.get(CV_CAP_PROP_FRAME_WIDTH);
-	int heightFrame = mainCamera.get(CV_CAP_PROP_FRAME_HEIGHT);
-#else
-	currentMainImage = imread("lenna.png");
-	if (currentMainImage.empty())
-	{
-		currentMainImage = imread("../lenna.png");
-		if (currentMainImage.empty())
+		// Recherche de la seconde caméra. Cette boucle est réalisée car sur Linux, la première caméra est 0, mais la seconde peut être 1, 2, ..., 7, 8.
+		int camNb = 1;
+		do
 		{
-			cerr << "Erreur dans la lecture de Lenna" << endl;
+			mainCamera.open(camNb);
+			camNb++;
+		} while (!mainCamera.isOpened() && camNb < 15);
+
+		if (!mainCamera.isOpened())
+		{
+			cerr << "Erreur lors de l'initialisation de la caméra mainCamera !" << endl;
+			cerr << "Fermeture..." << endl;
 			exit(EXIT_FAILURE);
 		}
-	}
-	//! on r�cup�re la largeur et hauteur de l'image
-	int widthFrame = currentMainImage.rows;
-	int heightFrame = currentMainImage.cols;
-#endif
 
-	//! on affiche la largeur et hauteur de l'image
+		//! on récupère la largeur et hauteur de l'image
+		widthFrame = mainCamera.get(CV_CAP_PROP_FRAME_WIDTH);
+		heightFrame = mainCamera.get(CV_CAP_PROP_FRAME_HEIGHT);
+	}
+	else
+	{
+		// Si une seule caméra est à disposition, l'image de mainCamera sera la photo de Lenna.
+		currentMainImage = imread("lenna.png");
+		if (currentMainImage.empty())
+		{
+			currentMainImage = imread("../lenna.png");
+			if (currentMainImage.empty())
+			{
+				cerr << "Erreur dans la lecture de Lenna" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+		//! on récupère la largeur et la hauteur de l'image
+		widthFrame = currentMainImage.rows;
+		heightFrame = currentMainImage.cols;
+	}
+
+	//! on affiche la largeur et la hauteur de l'image
 	std::cout << "Frame width = " << widthFrame << std::endl;
 	std::cout << "Frame height = " << heightFrame << std::endl;
 
-	//! création des fenetres OpenCV
+	//! on choisit la fenetre que l'on veut découper dans l'image de mainCamera
+	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
+	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
+
+	/*! Calibration de la caméra avant*/
+	calibrateFaceCamera(faceCamera);
+
+	/*! création des fenetres OpenCV */
 
 	//! Ce que renvoit la caméra
 	string mainImageName = "Image obtenue par la caméra";
 	namedWindow(mainImageName, CV_WINDOW_AUTOSIZE);
-	imshow(mainImageName, currentMainImage);
 
-	//! L'image d�coup�e effet fen�tre
+	//! L'image découpée effet fenètre
 	string mainImageCutName = "Image obtenue par la caméra, coupée";
 	namedWindow(mainImageCutName, CV_WINDOW_AUTOSIZE);
-	//imshow(mainImageCutName, currentFaceImage);
 
 	//! L'image d�coup�e effet fen�tre
 	string mainImageAfterTreatmentName = "Résultat";
 	namedWindow(mainImageAfterTreatmentName, CV_WINDOW_AUTOSIZE);
-	//imshow(mainImageAfterTreatmentName, currentFaceImage);
 
 	string faceImageName = "Image après détection de visage";
 	namedWindow(faceImageName, CV_WINDOW_AUTOSIZE);
-	imshow(faceImageName, currentFaceImage);
 
-	//! on chosit la fenetre qu'on veut (ici un peu au hasard)
-	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
-	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
-
-	/*! Première étape: calibration de la caméra "face" */
-	float dist_btw_eyes;
-	cout << "Distance entre les deux yeux (cm): " << endl;
-	cin >> dist_btw_eyes;
-	setEyeDistance(dist_btw_eyes);
-	cout << "Placez-vous à 50cm de la caméra, au centre de l'image, et appuyez sur c" << endl;
-
-	bool calibrating = false;
-
-	//! Boucle de calibration
-	while ((key != KEY_ESCAPE) && (key != ENTER_KEY))
-	{
-		faceCamera >> currentFaceImage;
-
-		// Effet mirroir
-		flip(currentFaceImage, currentFaceImage, 1);
-		Point3f temp;
-		// Affiche de l'image courante et dessin des yeux si ils sont détectés
-
-		if ((key == 'c') || calibrating)
-		{
-			if (key != 'e')
-			{
-				headDetectorCalibrated = calibrateDepth(currentFaceImage);
-
-				if (headDetectorCalibrated)
-				{
-					cout << "Calibration effectuée. \n\t- Appuyer sur Entrée pour confirmer.\n\t- Appuyer sur c pour refaire la calibration" << endl;
-					calibrating = false;
-				}
-				else
-				{
-					if (key == 'c')
-					{
-						cout << "Calibration (appuyer sur e pour annuler)..." << endl;
-						calibrating = true;
-					}
-				}
-			}
-			else
-			{
-				cout << "Calibration annulée. Repositionnez-vous et appuyez sur c" << endl;
-				bool detected = detectEyes(currentFaceImage, &temp, 1.0, true);
-				calibrating = false;
-			}
-		}
-		else
-		{
-			bool detected=detectEyes(currentFaceImage, &temp, 1.0, true);
-		}
-
-		imshow(faceImageName, currentFaceImage);
-
-		key = waitKey(1);
-	}
-
-	if (!headDetectorCalibrated)
-	{
-		cout << "Calibration non effectuée. Les paramètres par défaut seront utilisés." << endl;
-	}
-	else
-	{
-		cout << "Calibration validée" << endl;
-	}
-
-	key = 'a';
-
-	//! Boucle principale
+	/*! Boucle principale */
+	int key = 0;
 	Point3f relative_pos(0, 0, 0);
+	Mat resultImage = currentMainImage(decoupageLigne, decoupageColonne);
+	int decalagePixelHorizontal = 0; //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
+	int decalagePixelVertical = 0;	 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
 
-	imgFen2 = currentMainImage(decoupageLigne, decoupageColonne);
-	
 	while (key != KEY_ESCAPE)
 	{
 
-		faceCamera >> currentFaceImage;
+		/*! Récupération des images */
+
+		faceCamera >> currentFaceImage; // Récupération de l'image de face
+		if (nb_cam == 2)
+		{
+			mainCamera >> currentMainImage; // Récupération de l'image principale
+		}
+
+		/*! Traitement de l'image de face */
+
 		// Effet mirroir
 		flip(currentFaceImage, currentFaceImage, 1);
-#if (NB_CAM_AVAILABLE == 2)
-		mainCamera >> currentMainImage;
-#endif
 
 		// Analyse de l'image et détection des yeux
 		// relative_pos est mis à jour si les yeux sont détectés
 		bool detected = detectEyes(currentFaceImage, &relative_pos, 1, true, true);
-		cout << relative_pos << endl;
 
-		// ! on coupe l'image pour qu'elle soit de la taille de la fenetre (position de la cam�ra en haut � droite de l'�cran)
-		imgFen = currentMainImage(decoupageLigne, decoupageColonne);
+		/*! Création de l'image finale */
 
-		//! on change l'image obtenue
-		//! d'apr�s de longs calculs (thal�s), l'image obtenue d�pend de la distance de la cam�ra au "paysage"...
-		//! On va donc r�cup�rer la taille du marqueur � chaque frame, le comparer a sa taille r�elle et en d�duire ma distance cam�ra paysage
-		//! Pour l'instant sans marqueur on suppose la distance = 50 cm
-
-		calculDecalageFenetre(relative_pos, decalagePixelVertical, decalagePixelHorizontal, distanceCameraPaysage, pixelParMetre);
+		// Calculs du de la position de la fenêtre dans l'image en fonction de la
+		// position de la tête calculée précedemment
+		calculDecalageFenetre(relative_pos, decalagePixelVertical, decalagePixelHorizontal);
 
 		cv::Range decoupageLigne2;
 		cv::Range decoupageColonne2;
 
+		//! Si la fenêtre choisie ne sort pas du champ, on l'extrait et la stocke dans resultImage
 		if (decoupageImage(decoupageLigne, decoupageColonne, decalagePixelHorizontal, decalagePixelVertical, decoupageLigne2, decoupageColonne2, currentMainImage))
 		{
-			//! Si c'est possible on coupe l'image et on l'affiche
-			imgFen2 = *new Mat(heightFrame, widthFrame, 0);
-			imgFen2 = currentMainImage(decoupageLigne2, decoupageColonne2);
-			cout << "DANS le champs" << endl;
-		}
-		else
-		{
-			cout << "L'image est sortie du champs" << endl;
-			//imgFen2 = imgFen;
+			resultImage = currentMainImage(decoupageLigne2, decoupageColonne2);
 		}
 
-		// Affichage des images
-		imshow(mainImageAfterTreatmentName, imgFen2);
-		imshow(mainImageCutName, imgFen);
+		/*! Affichage des images */
+		imshow(mainImageAfterTreatmentName, resultImage);
 		imshow(faceImageName, currentFaceImage);
 		imshow(mainImageName, currentMainImage);
 
