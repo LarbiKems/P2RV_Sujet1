@@ -33,7 +33,7 @@ struct
 void init_faceDetection() {
 	headDetector.xml_files_loaded = false;
 	headDetector.dist_btw_eyes_cm = 6.0;
-	headDetector.depth_coeff = 50 / (6.0/80);
+	headDetector.depth_coeff = 50.0 / (6.0/80.0);
 	headDetector.calibrationDistance = 50.0;
 	headDetector.calibrated = false;
 }
@@ -131,7 +131,11 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
 	// Load xml files if not loaded
 	if (!headDetector.xml_files_loaded)
 	{
+		#ifdef _WIN32
 		headDetector.xml_files_loaded = headDetector.cascade.load("resources\\haarcascade_eye.xml");
+		#else
+		headDetector.xml_files_loaded = headDetector.cascade.load("resources/haarcascade_eye.xml");
+		#endif
 	}
 	if (!headDetector.xml_files_loaded)
 	{
@@ -142,7 +146,7 @@ bool detectEyes(Mat &img, Point3f *relative_head_position, double scale, bool dr
 	Mat gray, smallImg;
 
 	cvtColor(img, gray, COLOR_BGR2GRAY); // Convert to Gray Scale
-	double fx = 1 / scale;
+	double fx = 1.0 / scale;
 
 	// Resize the Grayscale Image
 	resize(gray, smallImg, Size(), fx, fx, INTER_LINEAR);

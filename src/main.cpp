@@ -1,4 +1,3 @@
-#define NB_CAM_AVAILABLE 2
 // inclusion des biblioth�ques, dont OpenCV
 
 #include <string.h>
@@ -15,95 +14,89 @@
 using namespace std;
 using namespace cv;
 
-// Default wdth and height of the video
-#define DEFAULT_VIDEO_WIDTH 800
-#define DEFAULT_VIDEO_HEIGHT 600
-#define pixelParMetre 0.000311 ///http://www.yourwebsite.fr/index.php/documents/287-relation-entre-pixel-et-taille-s-des-images
-
-
-
-VideoCapture faceCamera; // Caméra frontale
-VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
-Mat currentFaceImage;	//! l'image courante de la caméra frontale
-Mat currentMainImage;	//! l'image courante de la caméra avant
-
-int key = 0;						 //! touche du clavier
-Mat finalImage;						 //! l'image d�coup�e avec mouvement de la tete
-float distanceCameraPaysage = 0.5f;  //! distance paysage cam�ra (en m)
-int decalagePixelHorizontal = 0;	 //! d�calage horizontal entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-int decalagePixelVertical = 0;		 //! d�calage vertical entre l'image obtenue par effet fen�tre et celle avec mouvement de la t�te
-Mat intrinsicCam;					     //! Matrice des paramètres intrinsèques de la caméra
 int main()
 {
-	init_faceDetection();
+	
+	VideoCapture faceCamera; // Caméra frontale
+	VideoCapture mainCamera; // Caméra principale (caméra d'intêret)
 
-	//! on r�cup�re l'image de la cam�ra avant dans une matrice
-	//on r�cup�re l'image
+	// Matrices qui stockent les images des caméras
+	Mat currentFaceImage; //! l'image courante de la caméra frontale
+	Mat currentMainImage; //! l'image courante de la caméra avant
+
+	// Demande du nombre de caméras disponibles
+	int nb_cam = -1;
+	cout << "Nombre de caméras branchées: ";
+	cin >> nb_cam;
+	if (nb_cam < 1)
+	{
+		cerr << "L'application nécessite au moins 1 caméra" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	//! Ouverture de la caméra faceCamera
 	faceCamera.open(0);
 	if (!faceCamera.isOpened())
 	{
-		cerr << "Erreur lors de l'initialisation de la capture de la camera !" << endl;
+		cerr << "Erreur lors de l'initialisation de la caméra faceCamera !" << endl;
 		cerr << "Fermeture..." << endl;
 		exit(EXIT_FAILURE);
 	}
-	else
-	{
-		// on joue la premi�re image
-		faceCamera >> currentFaceImage;
-	}
 
-#if (NB_CAM_AVAILABLE == 2)
-	int camNb = 1;
-	do
+	int widthFrame;
+	int heightFrame;
+	if (nb_cam == 2)
 	{
-		cout << "Caméra n° " << camNb << endl;
-		mainCamera.open(camNb);
-		camNb++;
-	} while (!mainCamera.isOpened() && camNb < 10);
-
-	if (!mainCamera.isOpened())
-	{
-		cerr << "Erreur lors de l'initialisation de la caméra mainCamera !" << endl;
-		cerr << "Fermeture..." << endl;
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		// on joue la première image
-		mainCamera >> currentMainImage;
-	}
-	//! on r�cup�re la largeur et hauteur de l'image
-	int widthFrame = mainCamera.get(CV_CAP_PROP_FRAME_WIDTH);
-	int heightFrame = mainCamera.get(CV_CAP_PROP_FRAME_HEIGHT);
-#else
-	currentMainImage = imread("lenna.png");
-	if (currentMainImage.empty())
-	{
-		currentMainImage = imread("../lenna.png");
-		if (currentMainImage.empty())
+		// Recherche de la seconde caméra. Cette boucle est réalisée car sur Linux, la première caméra est 0, mais la seconde peut être 1, 2, ..., 7, 8.
+		int camNb = 1;
+		do
 		{
-			cerr << "Erreur dans la lecture de Lenna" << endl;
+			mainCamera.open(camNb);
+			camNb++;
+		} while (!mainCamera.isOpened() && camNb < 15);
+
+		if (!mainCamera.isOpened())
+		{
+			cerr << "Erreur lors de l'initialisation de la caméra mainCamera !" << endl;
+			cerr << "Fermeture..." << endl;
 			exit(EXIT_FAILURE);
 		}
-	}
-	//! on r�cup�re la largeur et hauteur de l'image
-	int widthFrame = currentMainImage.rows;
-	int heightFrame = currentMainImage.cols;
-#endif
 
-	//! on affiche la largeur et hauteur de l'image
+		//! on récupère la largeur et hauteur de l'image
+		widthFrame = mainCamera.get(CV_CAP_PROP_FRAME_WIDTH);
+		heightFrame = mainCamera.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+		mainCamera >> currentMainImage;
+	}
+	else
+	{
+		// Si une seule caméra est à disposition, l'image de mainCamera sera la photo de Lenna.
+		currentMainImage = imread("lenna.png");
+		if (currentMainImage.empty())
+		{
+			currentMainImage = imread("../lenna.png");
+			if (currentMainImage.empty())
+			{
+				cerr << "Erreur dans la lecture de Lenna" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+		//! on récupère la largeur et la hauteur de l'image
+		widthFrame = currentMainImage.rows;
+		heightFrame = currentMainImage.cols;
+	}
+
+	//! on affiche la largeur et la hauteur de l'image
 	std::cout << "Frame width = " << widthFrame << std::endl;
 	std::cout << "Frame height = " << heightFrame << std::endl;
-
-	
 
 	//! on chosit la fenetre qu'on veut (ici un peu au hasard)
 	Range decoupageColonne(heightFrame / 2 - 150, heightFrame / 2 + 150);
 	Range decoupageLigne(widthFrame / 2 - 100, widthFrame / 2 + 100);
 
-
 	/*! Calibration de la caméra et récupération de la matrice intrinsèque */
-	intrinsicCam = calibrateCamera(mainCamera);
+	Mat intrinsicCam = calibrateMainCamera(mainCamera, nb_cam);
+	init_faceDetection();
 	calibrateFaceCamera(faceCamera);
 
 	//! création des fenetres OpenCV
@@ -111,20 +104,18 @@ int main()
 	//! Ce que renvoit la caméra
 	string mainImageName = "Image obtenue par la camera";
 	namedWindow(mainImageName, CV_WINDOW_AUTOSIZE);
-	imshow(mainImageName, currentMainImage);
 
 	//! L'image d�coup�e effet fen�tre
 	string finalImageName = "Resultat";
 	namedWindow(finalImageName, CV_WINDOW_AUTOSIZE);
-	//imshow(finalImageName, currentFaceImage);
 
 	string faceImageName = "Image apres detection de visage";
 	namedWindow(faceImageName, CV_WINDOW_AUTOSIZE);
-	imshow(faceImageName, currentFaceImage);
 
-	key = 'a';
-
+	
 	//! Boucle principale
+	int key = 0;
+	Mat finalImage = *(new Mat(currentMainImage.clone()));						//! l'image d�coup�e avec mouvement de la tete
 	Point3f relative_pos(0, 0, 0);
 	
 	while (key != KEY_ESCAPE)
@@ -134,18 +125,18 @@ int main()
 		flip(currentFaceImage, currentFaceImage, 1); // Effet mirroir
 
 		//! Récupération de l'image de la caméra principale
-#if (NB_CAM_AVAILABLE == 2)
-		mainCamera >> currentMainImage;
-#endif
+		if (nb_cam == 2)
+		{
+			mainCamera >> currentMainImage;
+		}
 
 		// Analyse de l'image et détection des yeux
 		// relative_pos est mis à jour si les yeux sont détectés
 		bool detected = detectEyes(currentFaceImage, &relative_pos, 1, true, true);
 		cout << relative_pos << endl;
-
+		
 		//! Modification du point de vu à partir de la position de la tête
-		ChangementPointDeVue(currentMainImage, intrinsicCam,relative_pos, finalImage);
-
+		ChangementPointDeVue(currentMainImage, intrinsicCam, relative_pos, finalImage);
 		// Affichage des images
 		imshow(finalImageName, finalImage);
 		imshow(faceImageName, currentFaceImage);
