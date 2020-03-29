@@ -69,7 +69,8 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 		{
 			//std::cout << "devut" << std::endl;
 			// Calcul Point réel (x,y,z) dans le repère de la caméra.
-			Puv = (Mat_<float>(3, 1) << u, v, 1);
+			float s0 = 10;
+			Puv = (Mat_<float>(3, 1) << s0*u, s0*v, s0);
 			Pxyz = projMatrixInv * Puv;
 
 			float X = Pxyz.at<float>(0, 0);
