@@ -9,10 +9,10 @@ cv::Mat calibrateMainCamera(VideoCapture cap, int nb_cam)
 
 	/*! Si il n'y a pas de caméra principale, on fournit une matrice intrinsèque par défaut */
 	if (nb_cam == 1) {
-		int fx = 10;
-		int fy = 10;
-		int cx = 10;
-		int cy = 10;
+		int fx = 1;
+		int fy = 1;
+		int cx = 200;
+		int cy = 200;
 		return (Mat_<float>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
 	}
 
