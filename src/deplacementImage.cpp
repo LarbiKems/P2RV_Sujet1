@@ -15,8 +15,6 @@ Mat projMatrixInv = *(new Mat(3, 3, CV_32F));
 
 void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition, cv::Mat result)
 {
-	// result.release();
-	// result = Mat(img.rows, img.cols, CV_8UC3, Vec3b(0,0,0));
 	for (int i = 0; i < result.rows; i++)
 	{
 		for (int j = 0; j < result.cols; j++)
@@ -47,7 +45,7 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 	Rot = Rx * Ry * Rz;
 	/*! Matrice de transformation */
 	// [R | headPosition]
-	headRTMatrix = Mat(3, 4, CV_32FC1, 0.0f); // à remplir (pas sur des dimensions)
+	headRTMatrix = Mat(3, 4, CV_32FC1, 0.0f); 
 	for (int i = 0; i < 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
@@ -67,7 +65,6 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 	{
 		for (int v = 0; v < img.cols; v++)
 		{
-			//std::cout << "devut" << std::endl;
 			// Calcul Point réel (x,y,z) dans le repère de la caméra.
 			float s0 = 10;
 			Puv = (Mat_<float>(3, 1) << s0*u, s0*v, s0);
@@ -77,6 +74,7 @@ void ChangementPointDeVue(cv::Mat img, cv::Mat projMatrix, Point3f headPosition,
 			float Y = Pxyz.at<float>(1, 0);
 			float Z = Pxyz.at<float>(2, 0);
 			xyz1 = (Mat_<float>(4, 1) << X, Y, Z, 1);
+
 			// Calcul de la position du point en question dans l'écran de la caméra associée à la tête
 			Pwz1 = projMatrix * headRTMatrix * xyz1;
 
